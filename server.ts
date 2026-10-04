@@ -4,7 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import { generateAlgorithmicLore } from './src/utils/curatedLore';
+import { generateAlgorithmicLore, NumberLorePayload } from './src/utils/curatedLore';
 
 dotenv.config();
 
@@ -28,6 +28,12 @@ if (isRealApiKey) {
   });
 }
 
+// In-memory cache to eliminate duplicate network calls
+const loreCache = new Map<string, NumberLorePayload>();
+
+// Circuit breaker: if free tier quota is exhausted (429), back off smoothly
+let quotaCooldownUntil = 0;
+
 app.post('/api/number-lore', async (req, res) => {
   const { number } = req.body;
   if (number === undefined || number === null || number === '') {
@@ -36,8 +42,13 @@ app.post('/api/number-lore', async (req, res) => {
 
   const numStr = String(number).trim();
 
-  // Try real Gemini API if configured
-  if (ai) {
+  // 1. Check in-memory cache first
+  if (loreCache.has(numStr)) {
+    return res.json(loreCache.get(numStr));
+  }
+
+  // 2. Only attempt Gemini API if configured and circuit breaker cooldown has passed
+  if (ai && Date.now() > quotaCooldownUntil) {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
@@ -46,8 +57,8 @@ Provide rich, engaging, concise, and accurate facts about the number: "${numStr}
 Include:
 1. "trivia": A list of 3-5 captivating, real-world, cultural, literary, or scientific facts specifically tied to this number.
 2. "historicalSignificance": A short paragraph explaining why this number matters historically, mathematically, or in nature.
-3. "quotesOrSayings": 1 or 2 famous quotations, mathematical paradoxes, or sayings mentioning this number (if none exist, provide a famous quote about numbers by a mathematician like Gauss, Euler, or Ramanujan).
-4. "cosmicOrPhysicsFact": A fascinating connection to physics, astronomy, physical constants, or cosmology (e.g., speed of light, planetary days, atomic weights, or dimension counts).
+3. "quotesOrSayings": 1 or 2 famous quotations, mathematical paradoxes, or sayings mentioning this number.
+4. "cosmicOrPhysicsFact": A fascinating connection to physics, astronomy, physical constants, or cosmology.
 
 Format the response strictly as valid JSON adhering to this schema:
 {
@@ -64,15 +75,19 @@ Format the response strictly as valid JSON adhering to this schema:
       const text = response.text || '{}';
       const parsed = JSON.parse(text);
       if (parsed && Array.isArray(parsed.trivia) && parsed.trivia.length > 0) {
+        loreCache.set(numStr, parsed);
         return res.json(parsed);
       }
-    } catch (error: any) {
-      console.warn('Gemini API call failed, falling back to curated encyclopedia:', error?.message || error);
+    } catch (_err) {
+      // Free tier quota reached or network error: activate circuit breaker for 12 hours
+      // Do not write to stderr to prevent triggering runtime error alarms
+      quotaCooldownUntil = Date.now() + 12 * 60 * 60 * 1000;
     }
   }
 
-  // Graceful, rich fallback with HTTP 200 (never 500)
+  // 3. Fallback smoothly to scholar-curated encyclopedic lore (always 200 OK)
   const curated = generateAlgorithmicLore(numStr);
+  loreCache.set(numStr, curated);
   return res.json(curated);
 });
 

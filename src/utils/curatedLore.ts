@@ -31,15 +31,40 @@ export const FAMOUS_LORE: Record<string, NumberLorePayload> = {
     ],
     cosmicOrPhysicsFact: "The universe's cosmic density parameter Ω = 1 denotes a spatially flat universe, exactly balanced between perpetual expansion and eventual recollapse."
   },
+  '2': {
+    trivia: [
+      "Two is the only even prime number and the smallest prime in existence.",
+      "Serves as the foundation of binary arithmetic, digital electronics, and Boolean logic upon which modern computation runs.",
+      "Any integer power of 2 represents a doubling step in exponential geometric progressions."
+    ],
+    historicalSignificance: "The Dyad in Pythagorean philosophy symbolized duality, mutability, and the bridge between unity and multiplicity.",
+    quotesOrSayings: [
+      "Two are better than one, because they have a good return for their labor. — Ecclesiastes",
+      "Duality is the condition of all intellectual apprehension. — C.G. Jung"
+    ],
+    cosmicOrPhysicsFact: "Quantum mechanics dictates that fermions obey the Pauli Exclusion Principle, allowing at most 2 electrons of opposing spin per spatial orbital."
+  },
+  '3': {
+    trivia: [
+      "Three is the first odd prime and the smallest number of sides required to form a closed polygon in Euclidean 2D space (triangle).",
+      "A natural harmony number across human folklore, architecture (trilithons), and classical storytelling (three wishes, Rule of Three).",
+      "In topology, 3 is the dimension of the spatial manifold in which macro-scale physical reality unfolds."
+    ],
+    historicalSignificance: "Pythagoreans called 3 the 'Triad' and considered it the first true number because it possesses a beginning, a middle, and an end.",
+    quotesOrSayings: [
+      "Omne trium perfectum: Everything that comes in threes is perfect. — Latin proverb"
+    ],
+    cosmicOrPhysicsFact: "Baryonic matter (protons and neutrons) is composed of triplets of valence quarks bound together by quantum chromodynamic gluons."
+  },
   '7': {
     trivia: [
-      "Seven is the fourth prime number and the largest single-digit Mersenne prime (2³ - 1).",
+      "Seven is the fourth prime number and the largest single-digit Mersenne prime (2³ - 1 = 7).",
       "Historically associated with the seven classical planets visible to the naked eye (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn).",
       "Forms the basis of the 7-day week, standardized across Babylonian, Roman, and global calendars."
     ],
     historicalSignificance: "From the Seven Wonders of the Ancient World to Newton's division of the visible spectrum into 7 colors, seven has recurrent cultural and optical significance.",
     quotesOrSayings: [
-      "The seven liberal arts formed the core curriculum of medieval university education."
+      "The seven liberal arts formed the core curriculum of classical and medieval university education."
     ],
     cosmicOrPhysicsFact: "There are 7 crystal systems in crystallography describing all symmetric 3D repeating lattices in solid-state physics."
   },
@@ -66,6 +91,18 @@ export const FAMOUS_LORE: Record<string, NumberLorePayload> = {
       "Thirteen is considered unlucky by superstition, yet stands among the purest Fibonacci primes in mathematics."
     ],
     cosmicOrPhysicsFact: "The observable universe is approximately 13.787 billion years old according to Planck satellite cosmological measurements."
+  },
+  '28': {
+    trivia: [
+      "Twenty-eight is the second perfect number: 1 + 2 + 4 + 7 + 14 = 28.",
+      "28 is the 7th triangular number: T₇ = 1 + 2 + 3 + 4 + 5 + 6 + 7 = 28.",
+      "Approximates the orbital period of the Moon around Earth (27.3 sidereal days / 29.5 synodic days)."
+    ],
+    historicalSignificance: "Euclid proved in Elements Book IX that 2ᵖ⁻¹(2ᵖ - 1) generates an even perfect number whenever (2ᵖ - 1) is prime (for p = 3, 4 × 7 = 28).",
+    quotesOrSayings: [
+      "A perfect number is one which is equal to the sum of its own parts. — Euclid"
+    ],
+    cosmicOrPhysicsFact: "Nickel-28 is a nuclear magic number; nuclei with 28 protons or neutrons exhibit anomalously elevated binding energies and stability."
   },
   '42': {
     trivia: [
@@ -128,6 +165,18 @@ export const FAMOUS_LORE: Record<string, NumberLorePayload> = {
     ],
     cosmicOrPhysicsFact: "The wavelength of neutral hydrogen radio emission in deep interstellar space (21 cm) corresponds to a photon frequency near 1,420 MHz."
   },
+  '256': {
+    trivia: [
+      "256 is 2⁸, the exact number of distinct values representable by a single 8-bit digital byte (0 to 255).",
+      "A composite power of two: 256 = 16² = 4⁴ = 2⁸.",
+      "Central to RGB digital color spaces, where 256 gradations per color channel produce 16,777,216 distinct 24-bit colors."
+    ],
+    historicalSignificance: "The 8-bit microcomputer revolution (MOS 6502, Zilog Z80) was defined by 256-byte page boundaries and memory architecture.",
+    quotesOrSayings: [
+      "In binary computing, 256 represents the fundamental threshold of byte addressability."
+    ],
+    cosmicOrPhysicsFact: "In information theory, 256 states provide exactly 8 shannons (bits) of Shannon information entropy."
+  },
   '1729': {
     trivia: [
       "Known worldwide as the Hardy-Ramanujan Taxicab Number: the smallest number expressible as the sum of two positive cubes in two different ways: 1729 = 1³ + 12³ = 9³ + 10³.",
@@ -166,49 +215,76 @@ export const FAMOUS_LORE: Record<string, NumberLorePayload> = {
   }
 };
 
+function isPrimeNumber(n: number): boolean {
+  if (n <= 1) return false;
+  if (n <= 3) return true;
+  if (n % 2 === 0 || n % 3 === 0) return false;
+  for (let i = 5; i * i <= n; i += 6) {
+    if (n % i === 0 || n % (i + 2) === 0) return false;
+  }
+  return true;
+}
+
 export function generateAlgorithmicLore(val: string): NumberLorePayload {
-  const num = Number(val);
+  const cleanVal = val.trim();
+  if (FAMOUS_LORE[cleanVal]) {
+    return FAMOUS_LORE[cleanVal];
+  }
+
+  const num = Number(cleanVal);
   const isInt = Number.isInteger(num);
   const absNum = Math.abs(num);
-
-  if (FAMOUS_LORE[val]) {
-    return FAMOUS_LORE[val];
-  }
 
   const trivia: string[] = [];
 
   if (isInt) {
-    if (num % 2 === 0) {
-      trivia.push(`${num} is an even integer, divisible symmetrically into two equal integer halves of ${num / 2}.`);
+    const primeStatus = isPrimeNumber(absNum);
+
+    if (primeStatus) {
+      trivia.push(`${num} is a fundamental prime number, indivisible except by 1 and itself, forming one of the immutable building blocks of arithmetic.`);
+    } else if (num % 2 === 0) {
+      trivia.push(`${num} is an even integer, divisible symmetrically into two equal parts of ${num / 2}.`);
     } else {
-      trivia.push(`${num} is an odd integer, leaving a remainder of 1 upon Euclidean division by 2.`);
+      trivia.push(`${num} is an odd composite integer, leaving a remainder of 1 upon Euclidean division by 2.`);
     }
 
     if (num > 0) {
       const sq = num * num;
-      trivia.push(`Its second power (square) is ${sq.toLocaleString()}, and its cube is ${(sq * num).toLocaleString()}.`);
+      trivia.push(`Its square is ${sq.toLocaleString()}, and its cube is ${(sq * num).toLocaleString()}.`);
     }
 
+    // Binary bit count
+    const binStr = absNum.toString(2);
+    const ones = binStr.split('').filter(c => c === '1').length;
+    trivia.push(`In binary notation, ${cleanVal} is encoded as ${binStr}₂, possessing a Hamming weight of ${ones} set bit${ones === 1 ? '' : 's'}.`);
+
+    // Digital root
     const digits = String(absNum).split('');
     const dSum = digits.reduce((a, b) => a + parseInt(b, 10), 0);
-    trivia.push(`The sum of its decimal digits is ${dSum}, yielding a digital root of ${((absNum - 1) % 9) + 1}.`);
-
-    if (num > 0 && num <= 1000) {
-      trivia.push(`In coordinate geometry, a circle of radius ${num} encompasses an area of approximately ${(Math.PI * num * num).toFixed(2)} square units.`);
-    }
-  } else {
+    const digitalRoot = ((absNum - 1) % 9) + 1;
+    trivia.push(`The sum of its decimal digits is ${dSum}, yielding a digital root of ${digitalRoot}.`);
+  } else if (!isNaN(num)) {
     trivia.push(`${num} represents a real continuous quantity, positioned between ${Math.floor(num)} and ${Math.ceil(num)} on the number line.`);
-    trivia.push(`Its reciprocal (1/x) is ${(1 / num).toPrecision(6)}, central to harmonic and hyperbolic functions.`);
-    trivia.push(`Expressed in exponential notation, it equals ${num.toExponential(4)}.`);
+    trivia.push(`Its reciprocal (1/x) is ${(1 / num).toPrecision(6)}, foundational in harmonic analysis and inverse proportion.`);
+    trivia.push(`Expressed in normalized scientific notation, it is written as ${num.toExponential(4)}.`);
+  } else {
+    trivia.push(`Mathematical constant and symbolic representation: ${cleanVal}.`);
+    trivia.push(`Quantities of this class govern analytical functions, geometry, and transcendental algebra.`);
   }
+
+  const historicalSignificance = isInt
+    ? `From ancient Babylonian clay tablets and Pythagorean number theory to modern cryptography, integers like ${cleanVal} structure how human civilizations quantify resources, time, and coordinates.`
+    : `In the evolution of mathematical analysis from Archimedes to Newton and Leibniz, continuous quantities like ${cleanVal} paved the way for infinitesimal calculus and physics.`;
 
   return {
     trivia,
-    historicalSignificance: `Throughout the evolution of mathematics, quantities like ${val} bridge concrete enumeration with abstract algebraic structures.`,
+    historicalSignificance,
     quotesOrSayings: [
       "Numbers rule the universe. — Pythagoras",
-      "Mathematics is the queen of sciences and arithmetic the queen of mathematics. — Carl Friedrich Gauss"
+      "God created the integers, all else is the work of man. — Leopold Kronecker"
     ],
-    cosmicOrPhysicsFact: `In physical cosmology and quantum field theory, dimensionless ratios and numeric scale factors dictate the fundamental stability of atoms and stellar nucleosynthesis.`
+    cosmicOrPhysicsFact: isInt && num > 0 && num <= 118
+      ? `On the periodic table of elements, atomic number Z = ${num} corresponds to the chemical element and nuclear structure of ${cleanVal} protons.`
+      : `In physical cosmology, dimensionless ratios and numeric scale factors dictate the fundamental stability of atoms and stellar nucleosynthesis across the cosmos.`
   };
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BookOpen, Sparkles, RefreshCw, Quote, Landmark, Orbit } from 'lucide-react';
 import { generateAlgorithmicLore, NumberLorePayload } from '../utils/curatedLore';
 
@@ -6,38 +6,72 @@ interface GeminiLoreSectionProps {
   numberString: string;
 }
 
-export const GeminiLoreSection: React.FC<GeminiLoreSectionProps> = ({ numberString }) => {
-  const [lore, setLore] = useState<NumberLorePayload>(() => generateAlgorithmicLore(numberString || '42'));
-  const [loading, setLoading] = useState(false);
+const clientLoreCache = new Map<string, NumberLorePayload>();
 
-  const fetchLore = async () => {
-    if (!numberString) return;
+export const GeminiLoreSection: React.FC<GeminiLoreSectionProps> = ({ numberString }) => {
+  const [lore, setLore] = useState<NumberLorePayload>(() => {
+    const trimmed = numberString.trim() || '42';
+    return clientLoreCache.get(trimmed) || generateAlgorithmicLore(trimmed);
+  });
+  const [loading, setLoading] = useState(false);
+  const activeReqRef = useRef<string>(numberString);
+
+  const fetchLore = async (force: boolean = false) => {
+    const trimmed = numberString.trim();
+    if (!trimmed) return;
+    activeReqRef.current = trimmed;
+
+    // Check client cache if not forced
+    if (!force && clientLoreCache.has(trimmed)) {
+      setLore(clientLoreCache.get(trimmed)!);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/number-lore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ number: numberString }),
+        body: JSON.stringify({ number: trimmed }),
       });
 
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.trivia) && data.trivia.length > 0) {
-          setLore(data);
+          clientLoreCache.set(trimmed, data);
+          if (activeReqRef.current === trimmed) {
+            setLore(data);
+          }
           return;
         }
       }
-      setLore(generateAlgorithmicLore(numberString));
+
+      const fallback = generateAlgorithmicLore(trimmed);
+      clientLoreCache.set(trimmed, fallback);
+      if (activeReqRef.current === trimmed) {
+        setLore(fallback);
+      }
     } catch {
-      setLore(generateAlgorithmicLore(numberString));
+      const fallback = generateAlgorithmicLore(trimmed);
+      clientLoreCache.set(trimmed, fallback);
+      if (activeReqRef.current === trimmed) {
+        setLore(fallback);
+      }
     } finally {
-      setLoading(false);
+      if (activeReqRef.current === trimmed) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    setLore(generateAlgorithmicLore(numberString || '42'));
-    fetchLore();
+    const trimmed = numberString.trim() || '42';
+    if (clientLoreCache.has(trimmed)) {
+      setLore(clientLoreCache.get(trimmed)!);
+    } else {
+      setLore(generateAlgorithmicLore(trimmed));
+      fetchLore(false);
+    }
   }, [numberString]);
 
   return (
@@ -49,7 +83,7 @@ export const GeminiLoreSection: React.FC<GeminiLoreSectionProps> = ({ numberStri
               Encyclopedic Lore, Cultural History & Trivia
             </h2>
             <span className="text-xs font-mono text-amber-300 font-bold px-2.5 py-0.5 bg-amber-950 border border-amber-500/50 rounded-full shadow-sm">
-              AI Deep Insights
+              Universal Lore
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -58,7 +92,7 @@ export const GeminiLoreSection: React.FC<GeminiLoreSectionProps> = ({ numberStri
         </div>
 
         <button
-          onClick={fetchLore}
+          onClick={() => fetchLore(true)}
           disabled={loading}
           className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 rounded-xl shadow-md shadow-amber-500/20 transition-all active:scale-95 disabled:opacity-50"
           title="Refresh encyclopedic lore"
