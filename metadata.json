@@ -1,0 +1,6 @@
+{
+  "name": "OmniNumber - Universal Number Encyclopedia & Analyzer",
+  "description": "Discover every mathematical property, numeral system representation, divisor profile, Collatz orbit, chemical element, unit conversion, and cultural trivia for any number.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
